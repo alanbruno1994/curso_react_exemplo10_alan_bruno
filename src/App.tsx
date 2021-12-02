@@ -1,24 +1,54 @@
-import React from 'react';
-import logo from './logo.svg';
+import { useCallback, useEffect, useState } from 'react';
 import './App.css';
+import Movie from './components/Movie';
+
+type Film={
+  id:number
+  title:string
+  releaseDate:string
+}
 
 function App() {
+  const [loading,setLoading]=useState(false)
+  const [films,setFilms]=useState<Film[]>([])
+
+  //Aqui usei useCallback para evitar um loop na hora monitorar no useEffect
+  const findFilms= useCallback(async ()=>{
+    setLoading(true)//Aqui incia o carregamento
+    const response= await fetch('https://swapi.dev/api/films/')   
+    const data= await response.json()  
+    const filmsList = data.results.map((movieData:any) => {     
+      return {
+        id: movieData.episode_id,
+        title: movieData.title,      
+        releaseDate: movieData.release_date,
+      };
+    });
+    setFilms(filmsList);    
+    setLoading(false)//Aqui termina o carregamento
+  },[])
+
+  useEffect(()=>{
+    findFilms()
+  },[findFilms])
+
+  function generateFilms(){
+    if(!loading && films.length===0){
+      return <>Not found movies</>
+    }else if(loading)
+    {
+      return <>Loading...</>
+    }
+    
+    return <ul>{films.map((value:Film)=><Movie key={value.id} title={value.title} releaseData={value.releaseDate}/>)}</ul>
+
+  }
+
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <button onClick={findFilms}>Fetch</button>
+      {generateFilms()}
     </div>
   );
 }
